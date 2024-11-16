@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-def ejecutar_modelo_ampl(mod_path, dat_path, solver='gurobi', max_nodes=None, time_limit=3600):
+def ejecutar_modelo_ampl(mod_path, dat_path, solver='gurobi', max_nodes=None, time_limit=None):
     """
     Ejecutamos un modelo AMPL con los archivos .mod y .dat proporcionados,
     utilizando una heurística Iterated Local Search (ILS) para la solución inicial.
@@ -16,7 +16,7 @@ def ejecutar_modelo_ampl(mod_path, dat_path, solver='gurobi', max_nodes=None, ti
     - dat_path: Ruta al archivo .dat.
     - solver: Nombre del solver a utilizar (por defecto, 'gurobi').
     - max_nodes: Número máximo de nodos para el solver (opcional).
-    - time_limit: Límite de tiempo para el solver (en segundos, por defecto: 3600).
+    - time_limit: Límite de tiempo para el solver (en segundos().
     """
     try:
         # Inicializamos AMPL
