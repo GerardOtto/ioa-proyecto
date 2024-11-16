@@ -41,7 +41,7 @@ def convertir_txt_a_dat(txt_path, dat_path):
                 parts = line.split()
                 if len(parts) != 2:
                     raise ValueError(f"Línea {j+2}: Se esperaban 2 valores (capacidad y costo fijo), encontrados: {line}")
-                capacidad = int(parts[0])
+                capacidad = float(parts[0])
                 costo_fijo = float(parts[1])
                 almacenes.append((capacidad, costo_fijo))
             except StopIteration:
@@ -49,34 +49,44 @@ def convertir_txt_a_dat(txt_path, dat_path):
             except ValueError as ve:
                 raise ValueError(f"Error en la línea {j+2}: {ve}")
         
-        # Leer n clientes
+        # Leer clientes y costos de asignación
         clientes = []
         for i in range(n):
             try:
-                # Leer demanda
-                demanda_line = next(generator)
-                demanda = int(demanda_line)
+                # Leer demanda o posibles costos mal alineados
+                demanda_line = next(generator).split()
+                if len(demanda_line) == 1:
+                    # Línea contiene solo la demanda
+                    demanda = float(demanda_line[0])
+                    costos = []
+                else:
+                    # Línea contiene costos en lugar de demanda
+                    demanda = None
+                    costos = [float(c) for c in demanda_line]
             except StopIteration:
                 raise ValueError(f"Se esperaban {n} clientes, pero el archivo terminó antes.")
             except ValueError:
-                raise ValueError(f"Línea de demanda del cliente {i+1} tiene un formato incorrecto: {demanda_line}")
-            
-            # Leer m costos de asignación
-            costos = []
-            while len(costos) < m:
-                try:
-                    cost_line = next(generator)
-                    costos_part = cost_line.split()
-                    costos_flotantes = [float(c) for c in costos_part]
-                    costos.extend(costos_flotantes)
-                except StopIteration:
-                    raise ValueError(f"Cliente {i+1}: Se esperaban {m} costos de asignación, pero el archivo terminó antes.")
-                except ValueError:
-                    raise ValueError(f"Cliente {i+1}: Formato incorrecto en línea de costos: {cost_line}")
-            
-            if len(costos) > m:
-                costos = costos[:m]  # Truncar si hay más de m costos
+                raise ValueError(f"Línea del cliente {i+1} tiene un formato incorrecto: {demanda_line}")
+    
+            # Si no había costos en la línea de demanda, leerlos
+            if demanda is not None:
+                while len(costos) < m:
+                    try:
+                        cost_line = next(generator).strip()
+                        if not cost_line:  # Manejar líneas vacías
+                            continue
+                        costos.extend(float(c) for c in cost_line.split())
+                    except StopIteration:
+                        break
+                    except ValueError:
+                        raise ValueError(f"Cliente {i+1}: Formato incorrecto en línea de costos.")
+    
+            if len(costos) != m:
+                raise ValueError(f"Cliente {i+1}: Se esperaban {m} costos, pero se encontraron {len(costos)}.")
+    
             clientes.append((demanda, costos))
+
+
         
         # Generar el archivo .dat en el orden {D, C}
         with open(dat_path, 'w') as dat_file:
