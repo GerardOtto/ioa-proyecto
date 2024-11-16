@@ -1,4 +1,21 @@
-# Uso del Programa para una Instancia de Ejemplo
+# Instancias:
+
+**Pequeñas:** `cap41.txt`, `cap42.txt`
+
+**Grandes:** `capb.txt`, `capc.txt`
+
+# Parámetros de la terminal:
+
+- **-m**: Ruta al archivo .mod (opcional, por defecto: CFLP.mod).
+- **-d**: Ruta al archivo .dat generado (obligatorio).
+- **-s**: Nombre del solver a utilizar (opcional, por defecto: gurobi).
+
+**Criterios de término:**
+
+- **-n**: Número máximo de nodos para el solver (opcional).
+- **-t**: Límite de tiempo para el solver en segundos (opcional).
+
+# Uso del programa para una instancia de ejemplo:
 
 El flujo de ejecución del programa para una instancia de ejemplo `cap41.txt` se realiza de esta forma:
 
@@ -13,5 +30,5 @@ El flujo de ejecución del programa para una instancia de ejemplo `cap41.txt` se
    El algoritmo exacto necesita el .dat generado anteriormente. Utiliza una heurística ILS para encontrar una solución inicial y luego resuelve. Para ejecutarlo, usa el siguiente comando:
 
    ```bash
-   python algoritmo_exacto.py -m CFLP.mod -d datos_dat/cap41.dat
+   python algoritmo_exacto.py -m modelo_mod/CFLP.mod -d datos_dat/cap41.dat -n 1000 -t 1200
    ```
