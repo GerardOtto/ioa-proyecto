@@ -1,9 +1,9 @@
 import os
 import sys
 
-def convertir_txt_a_dat(txt_path, dat_path):
+def convertir_txt_a_dat_mod(txt_path, dat_path):
     """
-    Convierte un archivo .txt en formato OR Library a un archivo .dat compatible con AMPL.
+    Convierte un archivo .txt en formato OR Library a un archivo .dat compatible con el nuevo CFLP.mod.
     """
     try:
         with open(txt_path, 'r') as file:
@@ -12,7 +12,6 @@ def convertir_txt_a_dat(txt_path, dat_path):
         idx = 0  # Índice para recorrer las líneas
         total_lines = len(lines)
         
-        # Función generadora para obtener líneas no vacías
         def line_gen():
             nonlocal idx
             while idx < total_lines:
@@ -24,137 +23,77 @@ def convertir_txt_a_dat(txt_path, dat_path):
         generator = line_gen()
         
         # Leer m y n
-        try:
-            first_line = next(generator)
-            m, n = map(int, first_line.split())
-            print(f"Instancia encontrada: m={m}, n={n}")
-        except StopIteration:
-            raise ValueError("El archivo está vacío o no contiene m y n.")
-        except ValueError:
-            raise ValueError(f"Formato incorrecto en la primera línea: {first_line}")
+        first_line = next(generator)
+        m, n = map(int, first_line.split())
+        print(f"Instancia encontrada: m={m}, n={n}")
         
-        # Leer m líneas de almacenes
         almacenes = []
-        for j in range(m):
-            try:
-                line = next(generator)
-                parts = line.split()
-                if len(parts) != 2:
-                    raise ValueError(f"Línea {j+2}: Se esperaban 2 valores (capacidad y costo fijo), encontrados: {line}")
-                capacidad = float(parts[0])
-                costo_fijo = float(parts[1])
-                almacenes.append((capacidad, costo_fijo))
-            except StopIteration:
-                raise ValueError(f"Se esperaban {m} líneas de almacenes, pero el archivo terminó antes.")
-            except ValueError as ve:
-                raise ValueError(f"Error en la línea {j+2}: {ve}")
+        for _ in range(m):
+            line = next(generator)
+            capacidad, costo_fijo = map(float, line.split())
+            almacenes.append((capacidad, costo_fijo))
         
-        # Leer clientes y costos de asignación
         clientes = []
-        for i in range(n):
-            try:
-                # Leer demanda o posibles costos mal alineados
-                demanda_line = next(generator).split()
-                if len(demanda_line) == 1:
-                    # Línea contiene solo la demanda
-                    demanda = float(demanda_line[0])
-                    costos = []
-                else:
-                    # Línea contiene costos en lugar de demanda
-                    demanda = None
-                    costos = [float(c) for c in demanda_line]
-            except StopIteration:
-                raise ValueError(f"Se esperaban {n} clientes, pero el archivo terminó antes.")
-            except ValueError:
-                raise ValueError(f"Línea del cliente {i+1} tiene un formato incorrecto: {demanda_line}")
-    
-            # Si no había costos en la línea de demanda, leerlos
-            if demanda is not None:
-                while len(costos) < m:
-                    try:
-                        cost_line = next(generator).strip()
-                        if not cost_line:  # Manejar líneas vacías
-                            continue
-                        costos.extend(float(c) for c in cost_line.split())
-                    except StopIteration:
-                        break
-                    except ValueError:
-                        raise ValueError(f"Cliente {i+1}: Formato incorrecto en línea de costos.")
-    
-            if len(costos) != m:
-                raise ValueError(f"Cliente {i+1}: Se esperaban {m} costos, pero se encontraron {len(costos)}.")
-    
+        for _ in range(n):
+            demanda = float(next(generator))
+            costos = []
+            while len(costos) < m:
+                costos.extend(map(float, next(generator).split()))
             clientes.append((demanda, costos))
-
-
         
-        # Generar el archivo .dat en el orden {D, C}
         with open(dat_path, 'w') as dat_file:
-            # Definir conjuntos C y D
+            # Definir conjuntos
             C = ' '.join([f"j{j+1}" for j in range(m)])
-            D = ' '.join([f"i{j+1}" for j in range(n)])
+            D = ' '.join([f"i{i+1}" for i in range(n)])
             dat_file.write(f"set C := {C};\n")
             dat_file.write(f"set D := {D};\n\n")
             
-            # Parámetro de Capacidad
+            # Capacidad de almacenes
             dat_file.write("param s :=\n")
             for j in range(m):
                 dat_file.write(f"j{j+1} {almacenes[j][0]}\n")
             dat_file.write(";\n\n")
             
-            # Parámetro de Costo Fijo
+            # Costo fijo de almacenes
             dat_file.write("param f :=\n")
             for j in range(m):
                 dat_file.write(f"j{j+1} {almacenes[j][1]}\n")
             dat_file.write(";\n\n")
             
-            # Parámetro de Demanda
+            # Demanda de clientes
             dat_file.write("param demand :=\n")
-            for j in range(n):
-                dat_file.write(f"i{j+1} {clientes[j][0]}\n")
+            for i in range(n):
+                dat_file.write(f"i{i+1} {clientes[i][0]}\n")
             dat_file.write(";\n\n")
             
-            # Parámetro de Costos de Asignación en orden {D, C} (clientes, almacenes)
+            # Costos de asignación
             dat_file.write("param c : ")
             dat_file.write(' '.join([f"j{j+1}" for j in range(m)]))
             dat_file.write(" :=\n")
             for i in range(n):
-                costos_str = ' '.join(map(str, clientes[i][1]))
-                dat_file.write(f"i{i+1} {costos_str}\n")
+                dat_file.write(f"i{i+1} {' '.join(map(str, clientes[i][1]))}\n")
             dat_file.write(";\n")
         
         print(f"Archivo {dat_path} generado exitosamente.")
     except Exception as e:
         print(f"Error durante la conversión: {e}")
-        sys.exit(1)
 
 if __name__ == "__main__":
     import argparse
-    
-    # Configurar argumentos de línea de comandos
-    parser = argparse.ArgumentParser(description="Convertidor de archivos OR Library .txt a .dat para AMPL.")
-    parser.add_argument('-i', '--input', type=str, required=True,
-                        help="Ruta al archivo .txt de entrada.")
-    
+
+    parser = argparse.ArgumentParser(description="Convertidor de archivos OR Library .txt a .dat para CFLP.mod.")
+    parser.add_argument('-i', '--input', type=str, required=True, help="Ruta al archivo .txt de entrada.")
     args = parser.parse_args()
-    
-    # Verificar que el archivo de entrada exista
+
     if not os.path.exists(args.input):
         print(f"Error: El archivo de entrada '{args.input}' no existe.")
         sys.exit(1)
-    
-    # Asegurar que la carpeta datos_dat existe
+
     output_dir = "datos_dat"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    
-    # Generar el nombre del archivo de salida en datos_dat con extensión .dat
+
     input_filename = os.path.splitext(os.path.basename(args.input))[0]
     dat_path = os.path.join(output_dir, f"{input_filename}.dat")
-    
-    # Ejecutar la conversión
-    try:
-        convertir_txt_a_dat(args.input, dat_path)
-    except Exception as e:
-        print(f"Error durante la conversión: {e}")
-        sys.exit(1)
+
+    convertir_txt_a_dat_mod(args.input, dat_path)
