@@ -19,21 +19,35 @@ def solution_capacity(solution: list, cap_cost_array) -> float:
         capacity += cap_cost_array[center, 0]
     return capacity
 
-def solution_fitness(solution: list, cap_cost_array) -> float:
+def solution_fitness(solution: list, cap_cost_array, cost_matrix, demand_array) -> float:
     """
-    Calcula el costo total de una solución dada.
+    Calcula el costo total de una solución, incluyendo costos fijos de apertura y costos de asignación.
     
     Parámetros:
     - solution: Lista de índices de centros abiertos.
     - cap_cost_array: Array de capacidades y costos fijos de los centros.
+    - cost_matrix: Matriz de costos de asignación [clientes x centros].
+    - demand_array: Array de demandas de los clientes.
     
     Retorna:
     - Costo total.
     """
     fitness = 0
+    
+    # Sumar costos fijos de apertura
     for center in solution:
         fitness += cap_cost_array[center, 1]
+    
+    # Sumar costos de asignación
+    for client_idx, client_demand in enumerate(demand_array):
+        min_assignment_cost = float('inf')
+        for center in solution:
+            assignment_cost = cost_matrix[client_idx, center] * client_demand
+            min_assignment_cost = min(min_assignment_cost, assignment_cost)
+        fitness += min_assignment_cost
+    
     return fitness
+
 
 def fix_solution(solution: list, demand: float, max_facility: int, cap_cost_array) -> list:
     """
@@ -64,7 +78,7 @@ def fix_solution(solution: list, demand: float, max_facility: int, cap_cost_arra
 
     return solution
 
-def iterated_local_search(cap_cost_array, demand_array, facilities, demand_total, global_iterations=5, time_intervals=None):
+def iterated_local_search(cap_cost_array, demand_array, facilities, demand_total, cost_matrix, global_iterations=5, time_intervals=None):
     """
     Implementación de la heurística Iterated Local Search (ILS) para CFLP.
     
@@ -92,8 +106,9 @@ def iterated_local_search(cap_cost_array, demand_array, facilities, demand_total
         if center not in initial_solution:
             initial_solution.append(center)
     
+    print("--- ILS")
     print("La solución inicial:", initial_solution)
-    print("El costo inicial:", solution_fitness(initial_solution, cap_cost_array))
+    print("El costo inicial:", solution_fitness(initial_solution, cap_cost_array, cost_matrix, demand_array))
     
     # La solución inicial es la mejor solución
     best_solution = copy.deepcopy(initial_solution)
@@ -127,15 +142,15 @@ def iterated_local_search(cap_cost_array, demand_array, facilities, demand_total
                 tweaked_solution = fix_solution(tweaked_solution, demand_total, facilities, cap_cost_array)
             
             # Comparamos la solución tweaked con la actual
-            tweaked_fitness = solution_fitness(tweaked_solution, cap_cost_array)
-            current_fitness = solution_fitness(solution, cap_cost_array)
+            tweaked_fitness = solution_fitness(tweaked_solution, cap_cost_array, cost_matrix, demand_array)
+            current_fitness = solution_fitness(solution, cap_cost_array, cost_matrix, demand_array)
             
             if tweaked_fitness <= current_fitness:
                 solution = copy.deepcopy(tweaked_solution)
         
         # Comparar y actualizar la mejor solución
-        current_fitness = solution_fitness(solution, cap_cost_array)
-        best_fitness = solution_fitness(best_solution, cap_cost_array)
+        current_fitness = solution_fitness(solution, cap_cost_array, cost_matrix, demand_array)
+        best_fitness = solution_fitness(best_solution, cap_cost_array, cost_matrix, demand_array)
         
         if current_fitness < best_fitness:
             best_solution = copy.deepcopy(solution)
@@ -148,12 +163,12 @@ def iterated_local_search(cap_cost_array, demand_array, facilities, demand_total
                 new_base.append(center)
         
         # Probabilidad de aceptar la nueva solución
-        if solution_fitness(new_base, cap_cost_array) < solution_fitness(solution, cap_cost_array):
+        if solution_fitness(new_base, cap_cost_array, cost_matrix, demand_array) < solution_fitness(solution, cap_cost_array, cost_matrix, demand_array):
             solution = copy.deepcopy(new_base)
         elif random.random() < 0.15:
             solution = copy.deepcopy(new_base)
     
     print("La solución final es:", best_solution)
-    print("Su costo es:", solution_fitness(best_solution, cap_cost_array))
+    print("El costo final es:", solution_fitness(best_solution, cap_cost_array, cost_matrix, demand_array))
     
-    return best_solution, solution_fitness(best_solution, cap_cost_array)
+    return best_solution, solution_fitness(best_solution, cap_cost_array, cost_matrix, demand_array)

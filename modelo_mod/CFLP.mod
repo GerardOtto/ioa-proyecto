@@ -25,3 +25,7 @@ subject to AssignDemand {i in D}:
 # No exceder la capacidad de los almacenes
 subject to CapacityLimit {j in C}:
     sum {i in D} x[i, j] <= s[j] * y[j];
+
+# Suficiente capacidad total para satisfacer toda la demanda
+subject to SufficientCapacity:
+    sum {j in C} s[j] * y[j] >= sum {i in D} demand[i];

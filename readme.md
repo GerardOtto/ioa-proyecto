@@ -32,3 +32,9 @@ El flujo de ejecución del programa para una instancia de ejemplo `cap41.txt` se
    ```bash
    python algoritmo_exacto.py -m modelo_mod/CFLP.mod -d datos_dat/cap41.dat -n 1000 -t 1200
    ```
+
+   o sin restricciones:
+
+   ```bash
+   python algoritmo_exacto.py -m modelo_mod/CFLP.mod -d datos_dat/cap41.dat
+   ```
