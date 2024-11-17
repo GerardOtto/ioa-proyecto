@@ -46,15 +46,9 @@ def ejecutar_modelo_ampl(mod_path, dat_path, solver='gurobi', max_nodes=None, ti
             cap_cost_array[idx, 0] = s[j]
             cap_cost_array[idx, 1] = f[j]
         
-        # Crear la matriz de costos de asignación [clientes x centros]
-        cost_matrix = np.zeros((len(D), len(C)))
-        for i_idx, i in enumerate(D):
-            for j_idx, j in enumerate(C):
-                cost_matrix[i_idx, j_idx] = c[i][j]
-        
         # Aplicamos la heurística ILS
         best_solution, best_fitness = iterated_local_search(
-            cap_cost_array, demand_array, facilities, demand_total, cost_matrix
+            cap_cost_array, facilities, demand_total
         )
         
         print("\n---EXACTO")
@@ -94,26 +88,23 @@ def ejecutar_modelo_ampl(mod_path, dat_path, solver='gurobi', max_nodes=None, ti
 
         ampl.setOption('gurobi_options', gurobi_options)
         
+        print("\nResolviendo con AMPL...")
+        
         # Resolvemos el modelo
         ampl.solve()
-        
-        print(f"Resolviendo...")
         
         # Obtenemos valores de las variables
         y_values = ampl.getVariable("y").getValues().to_pandas()
         x_values = ampl.getVariable("x").getValues().to_pandas()
-        
-        # Obtener el valor de la función objetivo "TotalCost"
-        total_cost_final = ampl.getObjective("TotalCost").value()
-        print(f"Costo total final después de resolver el modelo: {total_cost_final}")
 
         # Mostramos los centros abiertos
-        print("\nCentros abiertos:")
+        centros_abiertos_ampl = []
         for j in C:
             index = j  # Aquí, j debe coincidir con los índices como 'j1', 'j2', etc.
             valor = y_values.loc[index, 'y.val']  # Accedemos al valor correcto
             if valor > 0.5:
-                print(f"{j}")
+                centros_abiertos_ampl.append(j)  # Agregar el centro abierto a la lista
+        print("\nCentros abiertos AMPL: " + ", ".join(centros_abiertos_ampl))
 
         # Mostramos las asignaciones de clientes
         print("\nAsignaciones de clientes:")
@@ -124,13 +115,14 @@ def ejecutar_modelo_ampl(mod_path, dat_path, solver='gurobi', max_nodes=None, ti
                 if asignacion > 0:
                     print(f"Cliente {i} asignado a Centro {j}, con un costo de asignación: {asignacion}")
         
+        # Obtenemos el valor de la función objetivo "TotalCost"
+        total_cost_final = ampl.getObjective("TotalCost").value()
         print("\n--- COMPARACIÓN DE COSTOS ---")
-        print(f"Costo inicial generado por ILS: {best_fitness}")
-        print(f"Costo final optimizado por AMPL: {total_cost_final}")
+        print(f"Costo inicial (de apertura) generado por ILS: {best_fitness}")
+        print(f"Costo final (de apertura + de asignación) optimizado por AMPL: {total_cost_final}")
 
     except Exception as e:
         print(f"Error al ejecutar el modelo AMPL: {e}")
-
 
 if __name__ == "__main__":
     import argparse
