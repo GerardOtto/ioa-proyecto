@@ -9,10 +9,10 @@ def imprimir_y_exportar_lineas_personalizadas(ruta_archivo, ruta_salida):
         indices = []
 
         # Generar el patrón solicitado
-        for i in range(2002, max_index, 1):
+        for i in range(502, max_index, 1):
             if i <= max_index:
                 indices.append(i)
-                indices.append(i + 2000)
+                indices.append(i + 4000)
 
         # Abrir el archivo de salida en modo escritura
         with open(ruta_salida, 'w', encoding='utf-8') as salida:
@@ -30,7 +30,7 @@ def imprimir_y_exportar_lineas_personalizadas(ruta_archivo, ruta_salida):
         print(f"Se produjo un error: {e}")
 
 # Ruta del archivo de entrada y salida
-ruta_entrada = "instancias/2000x2000_1.txt"
+ruta_entrada = "instancias/4000x500_1.txt"
 ruta_salida = "output.txt"
 
 # Llamada a la función

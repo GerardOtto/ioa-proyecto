@@ -107,14 +107,14 @@ def ejecutar_modelo_ampl(mod_path, dat_path, solver='gurobi', max_nodes=None, ti
         print("\nCentros abiertos AMPL: " + ", ".join(centros_abiertos_ampl))
 
         # Mostramos las asignaciones de clientes con sus costos
-        print("\nAsignaciones de clientes:")
-        for i in D:
-            for j in C:
-                index = (i, j)  # Índices como ('i1', 'j1')
-                asignacion = x_values.loc[index, 'x.val']  # Valor de asignación
-                if asignacion > 0:
-                    costo = c[i][j]  # Costos de asignación
-                    print(f"Cliente {i} asignado a Centro {j}, con un costo de asignación: {costo}")
+        ##print("\nAsignaciones de clientes:")
+        #for i in D:
+        #    for j in C:
+        #        index = (i, j)  # Índices como ('i1', 'j1')
+        #        asignacion = x_values.loc[index, 'x.val']  # Valor de asignación
+        #       if asignacion > 0:
+        #           costo = c[i][j]  # Costos de asignación
+        #            print(f"Cliente {i} asignado a Centro {j}, con un costo de asignación: {costo}")
         
         # Obtenemos el valor de la función objetivo "TotalCost"
         total_cost_final = ampl.getObjective("TotalCost").value()
